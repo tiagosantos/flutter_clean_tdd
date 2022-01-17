@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:flutter_tdd/domain/usercases/usecases.dart';
 import 'package:flutter_tdd/data/http/http.dart';
 import 'package:flutter_tdd/data/usecases/usecases.dart';
+import 'package:flutter_tdd/domain/helpers/helpers.dart';
 
 class HttpClientSpy extends Mock implements HttpClient {}
 
@@ -17,7 +18,7 @@ void main() {
     url = faker.internet.httpUrl();
     sut = RemoteAuthentication(httpClient: httpClient, url: url);
   });
-  test('Should call HttpCliente with correct values', () async {
+  test('Should call HttpClient with correct values', () async {
     final params = AuthenticationParams(
       email: faker.internet.email(),
       password: faker.internet.password(),
@@ -31,5 +32,19 @@ void main() {
         'password': params.password,
       },
     ));
+  });
+  test('Should throw UnexpectedError if HttpClient returns 400', () async {
+    when(httpClient.request(
+            url: anyNamed('url'),
+            method: anyNamed('method'),
+            body: anyNamed('body')))
+        .thenThrow(HttpError.badRequest);
+    final params = AuthenticationParams(
+      email: faker.internet.email(),
+      password: faker.internet.password(),
+    );
+    final future = sut.auth(params);
+
+    expect(future, throwsA(DomainError.unexpected));
   });
 }
